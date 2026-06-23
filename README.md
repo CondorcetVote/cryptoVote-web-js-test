@@ -53,3 +53,7 @@ verify.
 [.github/workflows/deploy.yml](.github/workflows/deploy.yml) builds with Vite and
 publishes `dist/` to GitHub Pages on every push to `main`. Enable it once in
 **Settings → Pages → Source → GitHub Actions**.
+
+## License
+
+[MIT](LICENSE)
