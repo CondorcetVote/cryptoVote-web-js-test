@@ -14,70 +14,42 @@ npm run build    # production build into dist/
 npm run preview  # serve the production build
 ```
 
-The page imports the package through its **standard entry point**:
+Serve over HTTP (`npm run dev` / `preview` / GitHub Pages) — a bundled ESM app
+needs a server, it is not meant to be opened as a `file://`.
+
+## Usage
+
+The package is a wasm-bindgen **`--target web`** build: a self-contained ES
+module that instantiates its own WASM through an async `init()`. You import it
+the standard way and `await init()` once — **no Vite plugin, no config**:
 
 ```js
-import { generate_identity_wasm, sign_vote_str_wasm /* … */ } from '@condorcet.vote/crypto-vote'
+import init, { generate_identity_wasm /* … */ } from '@condorcet.vote/crypto-vote'
+
+await init()                       // instantiate the WASM once
+const [secret, pub] = generate_identity_wasm()
 ```
 
-> ⚠️ Must be served over **HTTP** (`npm run dev` / `preview` / GitHub Pages).
-> Opening `dist/index.html` directly via `file://` does **not** work: ES module
-> scripts are CORS-blocked on the `file://` origin in Chrome.
+Vite resolves the `.wasm` asset on its own (the package locates it via
+`new URL('crypto_vote_bg.wasm', import.meta.url)`), so [vite.config.js](vite.config.js)
+only sets `base: './'` for the GitHub Pages sub-path. Nothing else is required.
 
-## How the build handles the WASM
+## Functions
 
-`@condorcet.vote/crypto-vote` is a wasm-bindgen **`--target bundler`** build. Its
-entry point does:
-
-```js
-import * as wasm from "./crypto_vote_bg.wasm";
-```
-
-This is WebAssembly/ESM integration, which Vite 8 (rolldown) cannot resolve on
-its own. The fix is a single, standard plugin — see [vite.config.js](vite.config.js):
-
-```js
-import wasm from 'vite-plugin-wasm'
-export default {
-  base: './',
-  plugins: [wasm()],
-  build: { target: 'esnext' }, // native top-level await
-}
-```
-
-Notes:
-- `vite-plugin-wasm` rewrites the `.wasm` import into an async instantiation
-  plus top-level await — hence `target: 'esnext'`.
-- `vite-plugin-top-level-await` is **not** used: it is incompatible with Vite 8
-  (it requires `rollup`, but Vite 8 uses rolldown). `target: 'esnext'` covers it.
-- `base: './'` keeps asset paths relative so the build works under the GitHub
-  Pages project sub-path (`/<repo>/`).
-
-## Compatibility findings (the package as published, v0.0.9)
-
-Tested importing the **default entry** `from '@condorcet.vote/crypto-vote'`:
-
-| Toolchain | Result |
+| Function | Purpose |
 |---|---|
-| Node ≥ 25 (ESM) | ✅ works natively (WASM-ESM enabled by default) |
-| Vite 8 + `vite-plugin-wasm` + `target: esnext` | ✅ works (this project) |
-| Vite 8 vanilla | ❌ `builtin:vite-wasm-fallback` cannot load `.wasm` |
-| `vite-plugin-top-level-await` on Vite 8 | ❌ plugin requires `rollup` |
-| Bun (run & bundle) | ❌ treats `.wasm` as a static asset → `wasm.* is not a function` |
+| `generate_identity_wasm()` | → `[secretBytes, publicHex]` |
+| `is_valid_secret_key_wasm(secretBytes)` | → `boolean` |
+| `derive_public_key_wasm(secretBytes)` | → `publicHex` |
+| `sign_vote_str_wasm(secretBytes, vote, electionId, ring)` | → `[signatureHex, keyImageHex]` |
+| `verify_vote_str_wasm(vote, electionId, signatureHex, keyImageHex, ring)` | → `boolean` |
 
-The crypto itself is correct everywhere it loads: signing produces a valid
-proof, verification returns `true` for the original ballot and `false` for a
-tampered one.
-
-### Suggestion for the package maintainer
-
-Shipping only a `--target bundler` build limits portability. Consider also
-publishing a **`--target web`** build (async `init()` — works in Vite, Bun,
-plain `<script type="module">`, and from a CDN with no bundler config) and an
-`exports` map with `node` / `browser` / `default` conditions.
+A ring needs **≥ 2** public keys and must include the signer's. Use button **A**
+to generate an identity (it pre-fills the other fields), **D** to sign, **E** to
+verify.
 
 ## Deployment
 
-[.github/workflows/deploy.yml](.github/workflows/deploy.yml) builds with Vite
-and publishes `dist/` to GitHub Pages on every push to `main`. Enable it once in
+[.github/workflows/deploy.yml](.github/workflows/deploy.yml) builds with Vite and
+publishes `dist/` to GitHub Pages on every push to `main`. Enable it once in
 **Settings → Pages → Source → GitHub Actions**.
