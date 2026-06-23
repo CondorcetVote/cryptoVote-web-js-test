@@ -86,6 +86,46 @@
     <div class="result" id="out-verify"></div>
   </section>
 
+  <!-- F: Prove Ownership -->
+  <section>
+    <h2>F — generate_nonce_wasm() + prove_ownership_wasm(secretBytes, electionId, nonce)</h2>
+    <p>Proves the caller owns the key image for an election, bound to a fresh
+       verifier nonce. The secret key never leaves the device; the proof reveals
+       nothing about it. Sign a vote in step D first to get a matching key image
+       for step G.</p>
+    <button id="btn-nonce">Generate nonce</button>
+    <label>Nonce (nonce_…)</label>
+    <div class="result" id="out-nonce"></div>
+    <label>Secret key (sk_…)</label>
+    <input type="text" id="in-prove-secret" placeholder="sk_… secret key" />
+    <label>Election ID (string)</label>
+    <input type="text" id="in-prove-election" value="election-2026" />
+    <label>Nonce (nonce_…) — from "Generate nonce" above, or the verifier</label>
+    <input type="text" id="in-prove-nonce" placeholder="nonce_… challenge" />
+    <button id="btn-prove">Prove ownership</button>
+    <label>Proof (own_…)</label>
+    <div class="result" id="out-prove"></div>
+  </section>
+
+  <!-- G: Verify Ownership -->
+  <section>
+    <h2>G — verify_ownership_wasm(publicKey, keyImage, electionId, nonce, proof)</h2>
+    <p>Public-input only — anyone can run it. The key image comes from signing a
+       vote (step D) for the same election; the nonce must be the one the prover used.</p>
+    <label>Public key (pk_…)</label>
+    <input type="text" id="in-vown-public" placeholder="pk_… public key" />
+    <label>Key image (ki_…) — from step D</label>
+    <input type="text" id="in-vown-ki" placeholder="ki_… key image" />
+    <label>Election ID (string)</label>
+    <input type="text" id="in-vown-election" value="election-2026" />
+    <label>Nonce (nonce_…)</label>
+    <input type="text" id="in-vown-nonce" placeholder="nonce_… challenge" />
+    <label>Proof (own_…)</label>
+    <input type="text" id="in-vown-proof" placeholder="From step F" />
+    <button id="btn-vown">Verify ownership</button>
+    <div class="result" id="out-vown"></div>
+  </section>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

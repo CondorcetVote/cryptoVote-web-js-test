@@ -8,6 +8,9 @@ import init, {
   secret_key_to_prefixed_wasm,
   sign_vote_str_wasm,
   verify_vote_str_wasm,
+  generate_nonce_wasm,
+  prove_ownership_wasm,
+  verify_ownership_wasm,
 } from '@condorcet.vote/crypto-vote'
 
 const status = document.getElementById('status')
@@ -89,6 +92,13 @@ function wireUp() {
       document.getElementById('in-verify-sig').value = signatureHex
       document.getElementById('in-verify-ki').value = keyImageHex
       document.getElementById('in-verify-ring').value = document.getElementById('in-sign-ring').value
+
+      // Chain into the ownership-proof flow (F/G): the key image just
+      // produced is exactly the one prove/verify_ownership is about.
+      document.getElementById('in-prove-secret').value = secretPrefixed
+      document.getElementById('in-prove-election').value = electionId
+      document.getElementById('in-vown-election').value = electionId
+      document.getElementById('in-vown-ki').value = keyImageHex
     } catch (e) {
       setResult('out-sign-sig', String(e), false)
       setResult('out-sign-ki', '')
@@ -108,6 +118,59 @@ function wireUp() {
       setResult('out-verify', valid ? 'Signature is VALID' : 'Signature is INVALID', valid)
     } catch (e) {
       setResult('out-verify', String(e), false)
+    }
+  })
+
+  // F — Generate verifier nonce
+  document.getElementById('btn-nonce').addEventListener('click', () => {
+    try {
+      const nonce = generate_nonce_wasm()
+      setResult('out-nonce', nonce, true)
+      // Both prover (F) and verifier (G) must use the same nonce verbatim.
+      document.getElementById('in-prove-nonce').value = nonce
+      document.getElementById('in-vown-nonce').value = nonce
+    } catch (e) {
+      setResult('out-nonce', String(e), false)
+    }
+  })
+
+  // F — Prove ownership
+  document.getElementById('btn-prove').addEventListener('click', () => {
+    try {
+      const secretPrefixed = document.getElementById('in-prove-secret').value.trim()
+      const electionId = document.getElementById('in-prove-election').value.trim()
+      const nonce = document.getElementById('in-prove-nonce').value.trim()
+
+      const secretBytes = secret_key_from_prefixed_wasm(secretPrefixed)
+      const proof = prove_ownership_wasm(secretBytes, electionId, nonce)
+      const publicKey = derive_public_key_wasm(secretBytes)
+      secretBytes.fill(0)
+
+      setResult('out-prove', proof, true)
+
+      // Pre-fill the verifier (G) with this proof and the public inputs.
+      document.getElementById('in-vown-public').value = publicKey
+      document.getElementById('in-vown-election').value = electionId
+      document.getElementById('in-vown-nonce').value = nonce
+      document.getElementById('in-vown-proof').value = proof
+    } catch (e) {
+      setResult('out-prove', String(e), false)
+    }
+  })
+
+  // G — Verify ownership
+  document.getElementById('btn-vown').addEventListener('click', () => {
+    try {
+      const publicKey = document.getElementById('in-vown-public').value.trim()
+      const keyImage = document.getElementById('in-vown-ki').value.trim()
+      const electionId = document.getElementById('in-vown-election').value.trim()
+      const nonce = document.getElementById('in-vown-nonce').value.trim()
+      const proof = document.getElementById('in-vown-proof').value.trim()
+
+      const valid = verify_ownership_wasm(publicKey, keyImage, electionId, nonce, proof)
+      setResult('out-vown', valid ? 'Ownership proof is VALID' : 'Ownership proof is INVALID', valid)
+    } catch (e) {
+      setResult('out-vown', String(e), false)
     }
   })
 }

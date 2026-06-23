@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@condorcet.vote/crypto-vote": "^0.2.0"
+    "@condorcet.vote/crypto-vote": "^0.3.0"
   },
   "devDependencies": {
     "vite": "^8.1.0"

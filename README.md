@@ -40,15 +40,22 @@ only sets `base: './'` for the GitHub Pages sub-path. Nothing else is required.
 
 | Function | Purpose |
 |---|---|
-| `generate_identity_wasm()` | → `[secretBytes, publicHex]` |
-| `is_valid_secret_key_wasm(secretBytes)` | → `boolean` |
-| `derive_public_key_wasm(secretBytes)` | → `publicHex` |
-| `sign_vote_str_wasm(secretBytes, vote, electionId, ring)` | → `[signatureHex, keyImageHex]` |
-| `verify_vote_str_wasm(vote, electionId, signatureHex, keyImageHex, ring)` | → `boolean` |
+| `generate_identity_wasm()` | → `[secretBytes, pk_…]` |
+| `secret_key_to_prefixed_wasm(secretBytes)` | → `sk_…` |
+| `secret_key_from_prefixed_wasm(sk_…)` | → `secretBytes` |
+| `is_valid_prefixed_secret_key_wasm(sk_…)` | → `boolean` |
+| `derive_public_key_wasm(secretBytes)` | → `pk_…` |
+| `sign_vote_str_wasm(secretBytes, vote, electionId, ring)` | → `[blsag_…, ki_…]` |
+| `verify_vote_str_wasm(vote, electionId, blsag_…, ki_…, ring)` | → `boolean` |
+| `generate_nonce_wasm()` | → `nonce_…` |
+| `prove_ownership_wasm(secretBytes, electionId, nonce_…)` | → `own_…` |
+| `verify_ownership_wasm(pk_…, ki_…, electionId, nonce_…, own_…)` | → `boolean` |
 
 A ring needs **≥ 2** public keys and must include the signer's. Use button **A**
 to generate an identity (it pre-fills the other fields), **D** to sign, **E** to
-verify.
+verify. **F**/**G** are the ownership-proof flow (new in v0.3.0): generate a
+nonce, prove you own the key image for an election, and verify that proof from
+public inputs — sign a vote in **D** first so **G** has a matching key image.
 
 ## Deployment
 
