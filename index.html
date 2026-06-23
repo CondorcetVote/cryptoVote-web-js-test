@@ -27,17 +27,17 @@
     <h2>A — generate_identity_wasm()</h2>
     <p>Generates a random secret key and its corresponding public key.</p>
     <button id="btn-generate">Generate</button>
-    <label>Secret key (hex, 64 chars)</label>
+    <label>Secret key (sk_…)</label>
     <div class="result" id="out-secret"></div>
-    <label>Public key (hex, 64 chars)</label>
+    <label>Public key (pk_…)</label>
     <div class="result" id="out-public"></div>
   </section>
 
   <!-- B: Validate Secret Key -->
   <section>
-    <h2>B — is_valid_secret_key_wasm(secretBytes)</h2>
-    <label>Secret key (hex, 64 chars)</label>
-    <input type="text" id="in-validate-secret" placeholder="Paste a 64-char hex secret key" />
+    <h2>B — is_valid_prefixed_secret_key_wasm(prefixed)</h2>
+    <label>Secret key (sk_…)</label>
+    <input type="text" id="in-validate-secret" placeholder="Paste a sk_… secret key" />
     <button id="btn-validate">Validate</button>
     <div class="result" id="out-validate"></div>
   </section>
@@ -45,8 +45,8 @@
   <!-- C: Derive Public Key -->
   <section>
     <h2>C — derive_public_key_wasm(secretBytes)</h2>
-    <label>Secret key (hex, 64 chars)</label>
-    <input type="text" id="in-derive-secret" placeholder="Paste a 64-char hex secret key" />
+    <label>Secret key (sk_…)</label>
+    <input type="text" id="in-derive-secret" placeholder="Paste a sk_… secret key" />
     <button id="btn-derive">Derive public key</button>
     <div class="result" id="out-derive"></div>
   </section>
@@ -54,8 +54,8 @@
   <!-- D: Sign Vote -->
   <section>
     <h2>D — sign_vote_str_wasm(secretBytes, vote, electionId, ring)</h2>
-    <label>Secret key (hex, 64 chars) — voter must be in the ring</label>
-    <input type="text" id="in-sign-secret" placeholder="64-char hex secret key" />
+    <label>Secret key (sk_…) — voter must be in the ring</label>
+    <input type="text" id="in-sign-secret" placeholder="sk_… secret key" />
     <label>Vote (string)</label>
     <input type="text" id="in-sign-vote" value="option-A" />
     <label>Election ID (string)</label>

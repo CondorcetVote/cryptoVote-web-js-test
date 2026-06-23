@@ -3,25 +3,14 @@
 import init, {
   generate_identity_wasm,
   derive_public_key_wasm,
-  is_valid_secret_key_wasm,
+  is_valid_prefixed_secret_key_wasm,
+  secret_key_from_prefixed_wasm,
+  secret_key_to_prefixed_wasm,
   sign_vote_str_wasm,
   verify_vote_str_wasm,
 } from '@condorcet.vote/crypto-vote'
 
 const status = document.getElementById('status')
-
-function hexToBytes(hex) {
-  if (hex.length !== 64) throw new Error(`Expected 64 hex chars, got ${hex.length}`)
-  const bytes = new Uint8Array(32)
-  for (let i = 0; i < 32; i++) {
-    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
-  }
-  return bytes
-}
-
-function bytesToHex(bytes) {
-  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
-}
 
 function parseRing(text) {
   return text.trim().split('\n').map(l => l.trim()).filter(Boolean)
@@ -37,17 +26,17 @@ function wireUp() {
   // A — Generate identity
   document.getElementById('btn-generate').addEventListener('click', () => {
     try {
-      const [secretBytes, publicHex] = generate_identity_wasm()
-      const secretHex = bytesToHex(secretBytes)
+      const [secretBytes, publicKey] = generate_identity_wasm()
+      const secretPrefixed = secret_key_to_prefixed_wasm(secretBytes)
       secretBytes.fill(0)
-      setResult('out-secret', secretHex)
-      setResult('out-public', publicHex)
-      document.getElementById('in-validate-secret').value = secretHex
-      document.getElementById('in-derive-secret').value = secretHex
-      document.getElementById('in-sign-secret').value = secretHex
+      setResult('out-secret', secretPrefixed)
+      setResult('out-public', publicKey)
+      document.getElementById('in-validate-secret').value = secretPrefixed
+      document.getElementById('in-derive-secret').value = secretPrefixed
+      document.getElementById('in-sign-secret').value = secretPrefixed
       const ring = document.getElementById('in-sign-ring')
-      if (!ring.value.includes(publicHex)) {
-        ring.value = (ring.value ? ring.value + '\n' : '') + publicHex
+      if (!ring.value.includes(publicKey)) {
+        ring.value = (ring.value ? ring.value + '\n' : '') + publicKey
       }
     } catch (e) {
       setResult('out-secret', String(e), false)
@@ -57,10 +46,8 @@ function wireUp() {
   // B — Validate secret key
   document.getElementById('btn-validate').addEventListener('click', () => {
     try {
-      const hex = document.getElementById('in-validate-secret').value.trim()
-      const bytes = hexToBytes(hex)
-      const valid = is_valid_secret_key_wasm(bytes)
-      bytes.fill(0)
+      const prefixed = document.getElementById('in-validate-secret').value.trim()
+      const valid = is_valid_prefixed_secret_key_wasm(prefixed)
       setResult('out-validate', valid ? 'Valid secret key' : 'Invalid secret key', valid)
     } catch (e) {
       setResult('out-validate', String(e), false)
@@ -70,11 +57,11 @@ function wireUp() {
   // C — Derive public key
   document.getElementById('btn-derive').addEventListener('click', () => {
     try {
-      const hex = document.getElementById('in-derive-secret').value.trim()
-      const bytes = hexToBytes(hex)
-      const pubHex = derive_public_key_wasm(bytes)
+      const prefixed = document.getElementById('in-derive-secret').value.trim()
+      const bytes = secret_key_from_prefixed_wasm(prefixed)
+      const pubKey = derive_public_key_wasm(bytes)
       bytes.fill(0)
-      setResult('out-derive', pubHex, true)
+      setResult('out-derive', pubKey, true)
     } catch (e) {
       setResult('out-derive', String(e), false)
     }
@@ -83,14 +70,14 @@ function wireUp() {
   // D — Sign vote
   document.getElementById('btn-sign').addEventListener('click', () => {
     try {
-      const secretHex = document.getElementById('in-sign-secret').value.trim()
+      const secretPrefixed = document.getElementById('in-sign-secret').value.trim()
       const vote = document.getElementById('in-sign-vote').value
       const electionId = document.getElementById('in-sign-election').value.trim()
       const ring = parseRing(document.getElementById('in-sign-ring').value)
 
       if (ring.length < 2) throw new Error('Ring must have at least 2 public keys')
 
-      const secretBytes = hexToBytes(secretHex)
+      const secretBytes = secret_key_from_prefixed_wasm(secretPrefixed)
       const [signatureHex, keyImageHex] = sign_vote_str_wasm(secretBytes, vote, electionId, ring)
       secretBytes.fill(0)
 
