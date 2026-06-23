@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>crypto-vote test</title>
+  <style>
+    body { font-family: monospace; max-width: 900px; margin: 20px auto; padding: 0 16px; }
+    section { border: 1px solid #ccc; margin: 16px 0; padding: 16px; }
+    h2 { margin-top: 0; }
+    label { display: block; margin-top: 8px; font-size: 0.85em; color: #555; }
+    input, textarea { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 0.85em; padding: 4px; margin-top: 2px; }
+    textarea { height: 80px; resize: vertical; }
+    button { margin-top: 10px; padding: 6px 14px; cursor: pointer; }
+    .result { margin-top: 10px; background: #f4f4f4; padding: 8px; white-space: pre-wrap; word-break: break-all; font-size: 0.8em; min-height: 24px; }
+    .ok { color: green; }
+    .err { color: red; }
+    #status { padding: 8px; background: #fff3cd; border: 1px solid #ffc107; }
+  </style>
+</head>
+<body>
+  <h1>@condorcet.vote/crypto-vote — test</h1>
+  <div id="status">Loading WASM…</div>
+
+  <!-- A: Generate Identity -->
+  <section>
+    <h2>A — generate_identity_wasm()</h2>
+    <p>Generates a random secret key and its corresponding public key.</p>
+    <button id="btn-generate">Generate</button>
+    <label>Secret key (hex, 64 chars)</label>
+    <div class="result" id="out-secret"></div>
+    <label>Public key (hex, 64 chars)</label>
+    <div class="result" id="out-public"></div>
+  </section>
+
+  <!-- B: Validate Secret Key -->
+  <section>
+    <h2>B — is_valid_secret_key_wasm(secretBytes)</h2>
+    <label>Secret key (hex, 64 chars)</label>
+    <input type="text" id="in-validate-secret" placeholder="Paste a 64-char hex secret key" />
+    <button id="btn-validate">Validate</button>
+    <div class="result" id="out-validate"></div>
+  </section>
+
+  <!-- C: Derive Public Key -->
+  <section>
+    <h2>C — derive_public_key_wasm(secretBytes)</h2>
+    <label>Secret key (hex, 64 chars)</label>
+    <input type="text" id="in-derive-secret" placeholder="Paste a 64-char hex secret key" />
+    <button id="btn-derive">Derive public key</button>
+    <div class="result" id="out-derive"></div>
+  </section>
+
+  <!-- D: Sign Vote -->
+  <section>
+    <h2>D — sign_vote_str_wasm(secretBytes, vote, electionId, ring)</h2>
+    <label>Secret key (hex, 64 chars) — voter must be in the ring</label>
+    <input type="text" id="in-sign-secret" placeholder="64-char hex secret key" />
+    <label>Vote (string)</label>
+    <input type="text" id="in-sign-vote" value="option-A" />
+    <label>Election ID (string)</label>
+    <input type="text" id="in-sign-election" value="election-2026" />
+    <label>Ring — one public key (hex) per line (min 2 members; voter's public key must be included)</label>
+    <textarea id="in-sign-ring" placeholder="public key hex line 1&#10;public key hex line 2"></textarea>
+    <button id="btn-sign">Sign</button>
+    <label>Signature (hex)</label>
+    <div class="result" id="out-sign-sig"></div>
+    <label>Key image (hex)</label>
+    <div class="result" id="out-sign-ki"></div>
+  </section>
+
+  <!-- E: Verify Vote -->
+  <section>
+    <h2>E — verify_vote_str_wasm(vote, electionId, signatureHex, keyImageHex, ring)</h2>
+    <label>Vote (string)</label>
+    <input type="text" id="in-verify-vote" value="option-A" />
+    <label>Election ID</label>
+    <input type="text" id="in-verify-election" value="election-2026" />
+    <label>Signature (hex)</label>
+    <input type="text" id="in-verify-sig" placeholder="From step D" />
+    <label>Key image (hex)</label>
+    <input type="text" id="in-verify-ki" placeholder="From step D" />
+    <label>Ring — one public key (hex) per line</label>
+    <textarea id="in-verify-ring" placeholder="public key hex line 1&#10;public key hex line 2"></textarea>
+    <button id="btn-verify">Verify</button>
+    <div class="result" id="out-verify"></div>
+  </section>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
