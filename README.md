@@ -5,6 +5,8 @@ A minimal, no-framework web page that exercises every function of
 (generate identity, validate / derive key, sign a ballot, verify a ballot),
 bundled with **Vite 8** and deployed to **GitHub Pages**.
 
+**Live demo:** https://condorcetvote.github.io/cryptoVote-web-js-test/
+
 ## Run
 
 ```bash
