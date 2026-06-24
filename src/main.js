@@ -158,6 +158,71 @@ function wireUp() {
     }
   })
 
+  // H — Benchmark
+  document.getElementById('btn-benchmark').addEventListener('click', () => {
+    const btn = document.getElementById('btn-benchmark')
+    btn.disabled = true
+    setResult('out-benchmark', 'En cours…')
+
+    setTimeout(() => {
+      try {
+        const idCount = Math.max(1, parseInt(document.getElementById('bench-id-count').value, 10))
+        const payloadSize = Math.max(16, parseInt(document.getElementById('bench-payload-size').value, 10))
+        const ringSize = Math.max(2, parseInt(document.getElementById('bench-ring-size').value, 10))
+
+        const lines = []
+
+        // 1 — Génération d'identités
+        const t0 = performance.now()
+        const identities = []
+        for (let i = 0; i < idCount; i++) {
+          const [sb, pk] = generate_identity_wasm()
+          const sp = secret_key_to_prefixed_wasm(sb)
+          sb.fill(0)
+          identities.push({ secretPrefixed: sp, publicKey: pk })
+        }
+        const genMs = performance.now() - t0
+        lines.push(`Génération identités  ×${idCount}   : ${genMs.toFixed(2)} ms total  |  ${(genMs / idCount).toFixed(3)} ms/op`)
+
+        // Prépare le ring (génère des membres supplémentaires si ringSize > idCount)
+        const ringMembers = identities.slice(0, ringSize)
+        for (let i = identities.length; i < ringSize; i++) {
+          const [sb, pk] = generate_identity_wasm()
+          const sp = secret_key_to_prefixed_wasm(sb)
+          sb.fill(0)
+          ringMembers.push({ secretPrefixed: sp, publicKey: pk })
+        }
+        const ring = ringMembers.map(m => m.publicKey)
+        const signer = ringMembers[0]
+
+        // Construit un payload JSON d'environ payloadSize octets
+        const padding = 'x'.repeat(Math.max(0, payloadSize - 14))
+        const vote = JSON.stringify({ d: padding }).slice(0, payloadSize)
+        const electionId = 'bench-election-2026'
+
+        // 2 — Signature
+        const t2 = performance.now()
+        const secretBytes = secret_key_from_prefixed_wasm(signer.secretPrefixed)
+        const [signatureHex, keyImageHex] = sign_vote_str_wasm(secretBytes, vote, electionId, ring)
+        secretBytes.fill(0)
+        const signMs = performance.now() - t2
+        lines.push(`Signature ring        ×1          : ${signMs.toFixed(2)} ms  (ring=${ringSize}, payload≈${vote.length}B)`)
+
+        // 3 — Vérification
+        const t3 = performance.now()
+        const valid = verify_vote_str_wasm(vote, electionId, signatureHex, keyImageHex, ring)
+        const verifyMs = performance.now() - t3
+        lines.push(`Vérification ring     ×1          : ${verifyMs.toFixed(2)} ms  (ring=${ringSize}) — ${valid ? 'VALID ✓' : 'INVALID ✗'}`)
+
+        setResult('out-benchmark', lines.join('\n'), true)
+      } catch (e) {
+        setResult('out-benchmark', String(e), false)
+      } finally {
+        btn.disabled = false
+      }
+    }, 20)
+  })
+
   // G — Verify ownership
   document.getElementById('btn-vown').addEventListener('click', () => {
     try {

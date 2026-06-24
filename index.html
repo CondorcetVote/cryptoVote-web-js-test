@@ -126,6 +126,20 @@
     <div class="result" id="out-vown"></div>
   </section>
 
+  <!-- H: Benchmark -->
+  <section>
+    <h2>H — Benchmark</h2>
+    <p>Mesure les performances de génération d'identités, signature en anneau et vérification.</p>
+    <label>Nombre d'identités à générer</label>
+    <input type="number" id="bench-id-count" value="10" min="1" max="500" />
+    <label>Taille du JSON à signer (octets)</label>
+    <input type="number" id="bench-payload-size" value="256" min="16" max="65536" />
+    <label>Taille du ring (nombre de membres)</label>
+    <input type="number" id="bench-ring-size" value="5" min="2" max="200" />
+    <button id="btn-benchmark">Lancer le benchmark</button>
+    <div class="result" id="out-benchmark"></div>
+  </section>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
